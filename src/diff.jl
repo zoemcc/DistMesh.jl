@@ -1,4 +1,6 @@
 function centraldiff(f::Function,p::VT) where VT
+    #println("Using DistMesh central diff")
+    #@show f, VT
     deps = sqrt(eps(eltype(VT)))
     dx = (f(p.+VT(deps,0,0)) - f(p.-VT(deps,0,0)))
     dy = (f(p.+VT(0,deps,0)) - f(p.-VT(0,deps,0)))

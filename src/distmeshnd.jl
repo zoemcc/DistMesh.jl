@@ -22,7 +22,8 @@ function distmesh(fdist::Function,
                   origin=GeometryBasics.Point{3,Float64}(-1,-1,-1),
                   widths=GeometryBasics.Point{3,Float64}(2,2,2),
                   fix=nothing,
-                  stats=false) where {VertType}
+                  stats=false,
+                  maxiters=100) where {VertType}
     # TODO: tetgen only handles Float64
     VT = GeometryBasics.Point{3,Float64}
     if isa(fix, Nothing)
@@ -32,7 +33,7 @@ function distmesh(fdist::Function,
     end
     o = VT(origin...)
     w = VT(widths...)
-    distmesh(fdist, fh, h, setup, o, w, fp, Val(stats), VT)
+    distmesh(fdist, fh, h, setup, o, w, fp, Val(stats), VT, maxiters)
 end
 
 """
@@ -55,7 +56,8 @@ function distmesh(fdist::Function,
                   widths,
                   fix,
                   ::Val{stats},
-                  ::Type{VertType}) where {VertType, stats}
+                  ::Type{VertType},
+                  maxiters) where {VertType, stats}
 
     geps=1e-1*h+setup.iso # parameter for filtering tets outside bounds and considering for max displacment of a node
 
@@ -130,6 +132,7 @@ function distmesh(fdist::Function,
         # bring outside points back to the boundary
         maxdp = typemin(eltype(VertType))
         maxmove = typemin(eltype(VertType))
+        #println("changes are being shown")
         for i in eachindex(p)
 
             p0 = p[i] # store original point location
@@ -159,6 +162,9 @@ function distmesh(fdist::Function,
 
         # increment iteration counter
         lcount = lcount + 1
+        if lcount % 10 == 0
+            @show lcount
+        end
 
         # save iteration stats
         if stats
@@ -171,7 +177,7 @@ function distmesh(fdist::Function,
         end
 
         # Termination criterion
-        if maxdp<setup.ptol*h
+        if maxdp<setup.ptol*h || lcount > maxiters
             return result
         end
     end
